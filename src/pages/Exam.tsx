@@ -50,12 +50,18 @@ export default function Exam() {
     <div className="min-h-screen bg-gray-50 flex flex-col">
       {/* 헤더 */}
       <div className="bg-[#1e3a5f] px-4 py-3 flex items-center justify-between sticky top-0 z-10">
+        <button
+          onClick={() => { if (confirm('시험을 종료하고 홈으로 돌아갈까요?')) navigate('/'); }}
+          className="text-white text-sm"
+        >
+          ← 홈
+        </button>
         <Timer totalSeconds={EXAM_MINUTES * 60} onExpire={handleExpire} />
         <span className="text-blue-200 text-sm">
           {answered.size}/{questions.length} 답변
         </span>
         <button onClick={() => setShowNav(v => !v)} className="text-white text-sm">
-          {showNav ? '닫기' : '문항 목록'}
+          {showNav ? '닫기' : '목록'}
         </button>
       </div>
 
