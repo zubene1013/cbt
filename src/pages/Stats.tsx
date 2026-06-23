@@ -26,6 +26,10 @@ export default function Stats() {
   const recent = history.slice(0, 10).reverse();
   const maxScore = 1000;
   const chartH = 120;
+  const viewW = 400;
+  const xOf = (i: number) =>
+    recent.length <= 1 ? viewW / 2 : 20 + (i / (recent.length - 1)) * (viewW - 40);
+  const yOf = (score: number) => chartH - (score / maxScore) * chartH;
 
   // 도메인별 평균 정답률
   const domains: Domain[] = ['secure', 'resilient', 'performance', 'cost'];
@@ -67,11 +71,11 @@ export default function Stats() {
         {/* 점수 추이 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
           <h2 className="font-bold text-gray-800 mb-3">점수 추이</h2>
-          <svg width="100%" height={chartH} viewBox={`0 0 ${recent.length * 40} ${chartH}`} preserveAspectRatio="none">
+          <svg width="100%" height={chartH} viewBox={`0 0 ${viewW} ${chartH}`} preserveAspectRatio="none">
             {/* 합격선 */}
             <line
-              x1={0} y1={chartH - (PASS_SCORE / maxScore) * chartH}
-              x2={recent.length * 40} y2={chartH - (PASS_SCORE / maxScore) * chartH}
+              x1={0} y1={yOf(PASS_SCORE)}
+              x2={viewW} y2={yOf(PASS_SCORE)}
               stroke="#ef4444" strokeDasharray="4 2" strokeWidth={1}
             />
             {/* 점수 꺾은선 */}
@@ -80,20 +84,24 @@ export default function Stats() {
                 fill="none"
                 stroke="#1e3a5f"
                 strokeWidth={2}
-                points={recent.map((h, i) =>
-                  `${i * 40 + 20},${chartH - (h.score / maxScore) * chartH}`
-                ).join(' ')}
+                points={recent.map((h, i) => `${xOf(i)},${yOf(h.score)}`).join(' ')}
               />
             )}
             {recent.map((h, i) => (
               <g key={h.attemptId}>
                 <circle
-                  cx={i * 40 + 20}
-                  cy={chartH - (h.score / maxScore) * chartH}
+                  cx={xOf(i)}
+                  cy={yOf(h.score)}
                   r={5}
                   fill={h.passed ? '#22c55e' : '#ef4444'}
                 />
-                <text x={i * 40 + 20} y={chartH - (h.score / maxScore) * chartH - 8} textAnchor="middle" fontSize={9} fill="#374151">
+                <text
+                  x={xOf(i)}
+                  y={yOf(h.score) - 8}
+                  textAnchor="middle"
+                  fontSize={11}
+                  fill="#374151"
+                >
                   {h.score}
                 </text>
               </g>

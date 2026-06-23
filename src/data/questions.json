@@ -418,5 +418,495 @@
     "answer": 1,
     "explanation": "SQS FIFO(First-In, First-Out) 대기열은 메시지 순서를 보장하고 정확히 한 번(exactly-once) 처리를 지원합니다. 표준 대기열은 최선(best-effort) 순서만 보장하고 중복이 발생할 수 있습니다. FIFO는 초당 최대 3,000건의 트랜잭션을 지원합니다.",
     "type": "single"
+  },
+  {
+    "id": "saa-031",
+    "domain": "secure",
+    "question": "온프레미스 서버가 주기적으로 AWS S3에 데이터를 업로드해야 합니다. IAM 자격증명이 필요한데, 가장 보안적으로 올바른 방법은?",
+    "choices": [
+      "IAM 루트 계정 Access Key를 서버에 저장",
+      "최소 권한의 IAM 사용자 Access Key를 생성하고 AWS Secrets Manager에서 관리",
+      "모든 AWS 권한을 가진 IAM 사용자를 생성해 편의성 확보",
+      "S3 버킷을 퍼블릭으로 설정해 자격증명 없이 업로드"
+    ],
+    "answer": 1,
+    "explanation": "온프레미스 서버는 IAM Role을 직접 연결할 수 없으므로 최소 권한 IAM 사용자 키를 사용합니다. AWS Secrets Manager에 저장하면 키 암호화·자동 교체·접근 감사가 가능합니다. 루트 키 사용과 퍼블릭 버킷은 심각한 보안 위반입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-032",
+    "domain": "secure",
+    "question": "여러 AWS 계정을 관리하는 회사에서 개발자들이 각자 필요한 계정에 자신의 IAM 사용자 없이 임시로 접근하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "각 계정마다 개발자 IAM 사용자를 생성",
+      "IAM Identity Center(SSO) + Permission Set으로 단일 로그인",
+      "루트 계정 비밀번호를 공유",
+      "개발자마다 Access Key를 발급 후 각 계정별로 설정"
+    ],
+    "answer": 1,
+    "explanation": "IAM Identity Center는 중앙에서 여러 계정의 권한(Permission Set)을 관리하고 SAML 기반 임시 자격증명을 발급합니다. 계정별 IAM 사용자 생성은 N×M 관리 부담이 생기고, 루트 공유는 심각한 보안 위반입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-033",
+    "domain": "secure",
+    "question": "외부 파트너가 S3에 파일을 업로드하도록 허용해야 합니다. AWS 자격증명을 파트너에게 주지 않고, 24시간만 유효한 업로드 링크를 제공하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "S3 버킷을 퍼블릭으로 설정",
+      "IAM 사용자 생성 후 자격증명 전달",
+      "S3 Pre-signed URL (PUT 권한, 24시간 만료) 생성",
+      "S3 버킷 정책에 파트너 IP 허용"
+    ],
+    "answer": 2,
+    "explanation": "Pre-signed URL은 서버에서 PUT 작업에 대한 서명된 URL을 생성하여 자격증명 공유 없이 지정 시간 동안만 특정 객체 업로드를 허용합니다. IP 허용만으로는 인증이 되지 않습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-034",
+    "domain": "secure",
+    "question": "S3 버킷에 저장된 객체에 대한 모든 접근 기록(누가, 언제, 어떤 파일에 접근했는지)을 감사해야 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "VPC Flow Logs",
+      "S3 Server Access Logging 또는 CloudTrail S3 Data Events 활성화",
+      "CloudWatch Metrics",
+      "GuardDuty S3 보호 활성화"
+    ],
+    "answer": 1,
+    "explanation": "S3 Server Access Logging은 요청자 IP·HTTP 메서드·객체 키·응답 코드를 기록합니다. CloudTrail Data Events는 더 상세한 API 레벨 감사 기록을 제공합니다. VPC Flow Logs는 네트워크 IP 수준만 기록하고, GuardDuty는 비정상 접근 탐지용입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-035",
+    "domain": "secure",
+    "question": "EC2 인스턴스가 저장하는 EBS 볼륨 데이터를 암호화해야 합니다. 키 관리를 AWS가 대신 해주길 원합니다. 가장 적합한 방법은?",
+    "choices": [
+      "앱에서 데이터를 직접 암호화해 저장",
+      "EBS 볼륨 생성 시 AWS Managed Key (aws/ebs)로 암호화 활성화",
+      "볼륨 데이터를 S3에 이동 후 S3 암호화 적용",
+      "EC2 인스턴스 스토어(Instance Store) 사용"
+    ],
+    "answer": 1,
+    "explanation": "EBS 암호화에 AWS Managed Key를 사용하면 KMS에서 키를 자동 관리하며 추가 설정 없이 투명하게 암호화됩니다. Instance Store는 임시 저장소로 인스턴스 중단 시 데이터가 사라집니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-036",
+    "domain": "secure",
+    "question": "Lambda 함수에서 RDS 비밀번호를 환경 변수에 평문으로 저장해 사용합니다. 90일마다 자동 교체하고 앱은 항상 최신 값을 가져와야 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "환경 변수를 Lambda Layer로 분리",
+      "AWS Secrets Manager에 저장 후 Lambda에서 런타임에 GetSecretValue 호출",
+      "S3에 암호화 파일로 저장 후 Lambda가 다운로드",
+      "SSM Parameter Store (SecureString) 사용"
+    ],
+    "answer": 1,
+    "explanation": "Secrets Manager는 비밀번호 암호화 저장, 자동 교체(Lambda Rotation 함수), GetSecretValue로 항상 최신 값 조회를 지원합니다. SSM Parameter Store는 자동 교체 기능이 없습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-037",
+    "domain": "secure",
+    "question": "개발팀의 S3 버킷에 퍼블릭 오브젝트가 올라가는 일이 반복됩니다. 계정 수준에서 모든 S3 버킷의 퍼블릭 접근을 한 번에 차단하는 가장 빠른 방법은?",
+    "choices": [
+      "각 버킷 정책을 수동으로 수정",
+      "계정 수준 S3 Block Public Access(Account-level) 활성화",
+      "Lambda로 주기적으로 퍼블릭 객체를 감지 및 제거",
+      "CloudTrail로 업로드 이벤트 감시"
+    ],
+    "answer": 1,
+    "explanation": "Account-level S3 Block Public Access는 계정 내 모든 버킷에 일괄 적용되어 퍼블릭 ACL·정책을 자동 차단합니다. 새로 생성되는 버킷에도 즉시 적용됩니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-038",
+    "domain": "secure",
+    "question": "AWS Organizations를 사용합니다. 보안팀이 모든 하위 계정에서 특정 리전 외 사용을 강제 차단하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "각 계정에 IAM 정책 적용",
+      "IAM Permission Boundary 적용",
+      "AWS Config Rules 적용",
+      "SCP(Service Control Policy) 적용"
+    ],
+    "answer": 3,
+    "explanation": "SCP는 Organizations 레벨에서 모든 하위 계정의 root를 포함한 주체에 강제 적용됩니다. Config Rules는 위반을 감지하지만 사전 차단은 못하고, IAM 정책은 해당 계정 관리자가 수정 가능합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-039",
+    "domain": "secure",
+    "question": "EC2 보안 그룹에서 0.0.0.0/0 인바운드 SSH 허용 규칙이 생기면 자동으로 감지하고 되돌리고 싶습니다. 가장 적합한 구성은?",
+    "choices": [
+      "CloudTrail로 변경 사항만 기록",
+      "AWS Config Rules + SSM Automation 자동 교정",
+      "GuardDuty 위협 탐지 활성화",
+      "Security Group 규칙 수동 모니터링"
+    ],
+    "answer": 1,
+    "explanation": "Config Rules는 보안 그룹 규칙 위반(NonCompliant)을 감지하고, SSM Automation Remediation으로 위반된 규칙을 자동으로 제거합니다. CloudTrail은 기록만 하고 자동 교정 기능이 없습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-040",
+    "domain": "secure",
+    "question": "Security Group과 NACL(Network ACL)의 차이로 옳은 것은?",
+    "choices": [
+      "Security Group은 서브넷 레벨, NACL은 인스턴스 레벨에 적용된다",
+      "Security Group은 상태 비저장(Stateless), NACL은 상태 저장(Stateful)이다",
+      "Security Group은 상태 저장(Stateful), NACL은 상태 비저장(Stateless)이다",
+      "둘 다 Deny 규칙을 명시적으로 설정해야 한다"
+    ],
+    "answer": 2,
+    "explanation": "Security Group은 인스턴스(ENI) 레벨의 Stateful 방화벽으로 인바운드 허용 시 응답 트래픽이 자동 허용됩니다. NACL은 서브넷 레벨의 Stateless 방화벽으로 인바운드·아웃바운드 규칙을 각각 명시해야 합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-041",
+    "domain": "secure",
+    "question": "AWS 계정에서 비정상적인 API 호출 패턴, 악성 IP 접근, 크립토마이닝 시도를 탐지하려 합니다. 가장 적합한 서비스는?",
+    "choices": [
+      "AWS CloudTrail",
+      "Amazon GuardDuty",
+      "AWS Config",
+      "Amazon Macie"
+    ],
+    "answer": 1,
+    "explanation": "GuardDuty는 CloudTrail·VPC Flow Logs·DNS 로그를 ML로 분석하여 비정상 API 호출, 크립토마이닝, 악성 IP 접근을 자동 탐지합니다. CloudTrail은 기록만 하고, Macie는 S3 PII 탐지용입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-042",
+    "domain": "resilient",
+    "question": "프로덕션 MySQL DB에 부하가 증가했습니다. 보고서 쿼리가 OLTP 트랜잭션에 영향을 줍니다. 데이터 손실 없이 성능을 개선하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "RDS 인스턴스를 더 큰 타입으로 변경 (Scale Up)",
+      "보고서용 RDS Read Replica를 생성하고 보고서 쿼리를 Replica로 분산",
+      "Multi-AZ 활성화",
+      "ElastiCache Redis로 DB를 교체"
+    ],
+    "answer": 1,
+    "explanation": "Read Replica는 읽기 전용 복제본으로 보고서 쿼리를 오프로드하여 Primary의 OLTP 성능을 보호합니다. Multi-AZ는 고가용성용으로 읽기 부하 분산 기능이 없습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-043",
+    "domain": "resilient",
+    "question": "RDS Multi-AZ 배포에서 Primary 인스턴스가 장애가 나면 어떻게 됩니까?",
+    "choices": [
+      "사용자가 수동으로 Standby를 Primary로 승격해야 한다",
+      "RDS가 자동으로 Standby로 Failover하고 DNS 레코드가 Standby를 가리킨다",
+      "Read Replica가 자동으로 Primary가 된다",
+      "새 인스턴스를 생성해야 한다"
+    ],
+    "answer": 1,
+    "explanation": "Multi-AZ는 동기 복제 기반 자동 Failover를 지원합니다. 장애 발생 시 DNS CNAME이 Standby 인스턴스를 가리키도록 자동 업데이트되며 일반적으로 1-2분 내에 완료됩니다. Read Replica는 비동기 복제로 Failover 대상이 아닙니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-044",
+    "domain": "resilient",
+    "question": "주문 처리 Lambda 함수가 SQS 메시지를 처리하는 데 평균 25초가 걸립니다. 같은 메시지가 여러 번 처리되는 중복 처리 문제가 발생합니다. 가장 적합한 해결책은?",
+    "choices": [
+      "SQS FIFO 큐로 전환",
+      "SQS Visibility Timeout을 처리 시간보다 길게 설정 (예: 60초)",
+      "SQS 메시지 보존 기간을 단축",
+      "Lambda 타임아웃을 30초로 늘림"
+    ],
+    "answer": 1,
+    "explanation": "Visibility Timeout이 처리 시간(25초)보다 짧으면 처리 중인 메시지가 다시 보이게 되어 다른 소비자가 동일 메시지를 가져갑니다. 60초로 늘리면 처리 완료 전까지 메시지가 숨겨져 중복 처리가 방지됩니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-045",
+    "domain": "resilient",
+    "question": "이벤트 발생 시 여러 마이크로서비스가 독립적으로 처리해야 합니다. 한 서비스 장애가 다른 서비스에 영향을 주지 않아야 합니다. 가장 적합한 아키텍처는?",
+    "choices": [
+      "각 서비스가 직접 이벤트 소스를 폴링",
+      "SNS 토픽 → 각 서비스별 SQS 큐 구독 (Fan-out)",
+      "Lambda가 모든 서비스를 순차 호출",
+      "단일 SQS 큐를 모든 서비스가 공유"
+    ],
+    "answer": 1,
+    "explanation": "SNS Fan-out + 각 서비스별 SQS는 메시지 하나로 N개 서비스에 동시 전달하고 서비스 독립성을 보장합니다. 단일 SQS 공유 시 경쟁 소비로 각 서비스가 모든 메시지를 받지 못합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-046",
+    "domain": "resilient",
+    "question": "Aurora DB 클러스터에 읽기 요청이 많아졌습니다. 부하에 따라 자동으로 Reader 인스턴스를 추가·제거하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "Aurora 인스턴스를 더 큰 타입으로 업그레이드",
+      "Aurora Auto Scaling으로 Read Replica를 자동 추가/제거",
+      "Aurora Multi-AZ를 추가로 활성화",
+      "DynamoDB DAX를 Aurora 앞에 배치"
+    ],
+    "answer": 1,
+    "explanation": "Aurora Auto Scaling은 읽기 부하(CloudWatch 지표)에 따라 Reader 인스턴스를 자동으로 추가하고 부하 감소 시 제거합니다. 단순 업그레이드는 쓰기 인스턴스만 커지고 읽기 분산 효과가 없습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-047",
+    "domain": "resilient",
+    "question": "RTO 15분, RPO 1시간인 DR 요구사항이 있습니다. 비용 효율적인 AWS DR 전략은?",
+    "choices": [
+      "Backup & Restore (S3 스냅샷만 보관)",
+      "Pilot Light (핵심 리소스만 DR 리전에 유지)",
+      "Warm Standby (일부 리소스를 DR 리전에서 운영)",
+      "Multi-Site Active-Active"
+    ],
+    "answer": 1,
+    "explanation": "Pilot Light는 DB 복제 등 핵심 데이터만 유지하고 장애 시 나머지 리소스를 빠르게 프로비저닝합니다. RTO 15분·RPO 1시간을 달성할 수 있습니다. Backup & Restore는 RTO가 수 시간, Warm Standby는 더 비쌉니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-048",
+    "domain": "resilient",
+    "question": "주 리전 장애 시 DR 리전으로 Route 53이 자동으로 트래픽을 전환해야 합니다. 가장 적합한 Route 53 구성은?",
+    "choices": [
+      "Route 53 Weighted Routing",
+      "Route 53 Geolocation Routing",
+      "Route 53 Failover Routing + Health Check",
+      "Route 53 Latency Routing"
+    ],
+    "answer": 2,
+    "explanation": "Failover Routing은 Health Check를 통해 Primary 리전 비정상 감지 시 Secondary로 100% 트래픽을 자동 전환합니다. Weighted는 비율 분산, Geolocation은 위치 기반, Latency는 지연 기반 라우팅으로 자동 DR 전환과 다릅니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-049",
+    "domain": "resilient",
+    "question": "ALB 뒤의 EC2 Auto Scaling 그룹에서 스케일 인(인스턴스 감소) 시 처리 중인 요청이 갑자기 끊기는 문제가 있습니다. 가장 적합한 해결책은?",
+    "choices": [
+      "스케일 인을 비활성화",
+      "ALB Connection Draining(Deregistration Delay) 활성화",
+      "Auto Scaling 쿨다운 기간을 늘림",
+      "인스턴스를 직접 종료"
+    ],
+    "answer": 1,
+    "explanation": "Connection Draining(Deregistration Delay)은 인스턴스 등록 해제 전 기존 연결이 완료될 때까지 대기합니다(기본 300초). 새 요청은 차단하고 기존 요청은 완료 후 인스턴스를 종료합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-050",
+    "domain": "performance",
+    "question": "EC2에서 운영 중인 동적 웹 앱과 S3 정적 파일을 하나의 도메인으로 제공해야 합니다. /api → EC2, /static → S3로 경로 기반 라우팅하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "EC2에서 S3 파일도 직접 서빙",
+      "CloudFront 배포 + 경로 기반 오리진 구성 (Path Pattern)",
+      "Route 53 레코드 두 개 등록",
+      "ALB에서 S3로 직접 연결"
+    ],
+    "answer": 1,
+    "explanation": "CloudFront는 단일 배포에서 경로별 오리진을 지정할 수 있습니다. /api/* → ALB/EC2, /static/* → S3 오리진으로 구성합니다. ALB는 S3를 직접 오리진으로 지원하지 않습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-051",
+    "domain": "performance",
+    "question": "Python Lambda 함수가 매번 실행 시 외부 API에서 설정 데이터를 불러옵니다. 이 API 호출이 매번 발생해 지연과 비용이 늘고 있습니다. 가장 적합한 최적화는?",
+    "choices": [
+      "Lambda 메모리를 최대로 늘림",
+      "외부 API 데이터를 Lambda 핸들러 함수 밖 전역 변수에 캐싱 (Execution Context 재사용)",
+      "Lambda 타임아웃을 늘림",
+      "함수를 여러 개로 분리"
+    ],
+    "answer": 1,
+    "explanation": "Lambda 핸들러 함수 밖에서 초기화한 코드는 Warm 실행 시 재사용됩니다. 전역 변수에 API 응답을 캐싱하면 첫 실행 후 warm 실행에서는 API 호출 없이 캐시된 값을 사용하여 지연·비용이 감소합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-052",
+    "domain": "performance",
+    "question": "DynamoDB 테이블에서 이메일 주소로 사용자를 검색해야 합니다. 현재 Primary Key는 userId입니다. 가장 적합한 방법은?",
+    "choices": [
+      "Scan으로 전체 테이블 검색",
+      "이메일을 Partition Key로 하는 GSI(Global Secondary Index) 추가",
+      "테이블 데이터를 전부 RDS로 마이그레이션",
+      "새 테이블을 만들어 이메일로 Primary Key 설정"
+    ],
+    "answer": 1,
+    "explanation": "GSI는 다른 속성으로 Query할 수 있는 인덱스입니다. 이메일을 PK로 하는 GSI를 추가하면 O(1) 조회가 가능합니다. Scan은 전체 테이블을 읽어 비용·시간이 비효율적입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-053",
+    "domain": "performance",
+    "question": "DynamoDB 기반 앱에서 특정 상품 페이지에 트래픽이 몰려 초당 수만 번 동일 아이템을 조회합니다. 응답을 마이크로초 수준으로 개선하려 합니다. 가장 적합한 해결책은?",
+    "choices": [
+      "DynamoDB를 프로비저닝 모드로 전환",
+      "DynamoDB DAX 클러스터 추가",
+      "DynamoDB GSI 추가",
+      "ElastiCache Memcached 추가"
+    ],
+    "answer": 1,
+    "explanation": "DAX(DynamoDB Accelerator)는 DynamoDB 전용 인메모리 캐시로 마이크로초 응답을 제공합니다. DynamoDB API와 호환되어 코드 변경이 최소화되며 핫 파티션 문제도 해결합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-054",
+    "domain": "performance",
+    "question": "게임 앱의 실시간 리더보드를 구현합니다. 초당 수만 건 업데이트, 정렬된 순위 조회, 고가용성이 필요합니다. 가장 적합한 방법은?",
+    "choices": [
+      "RDS MySQL with 인덱스",
+      "DynamoDB with GSI",
+      "Amazon Redshift",
+      "ElastiCache Redis (Sorted Set)"
+    ],
+    "answer": 3,
+    "explanation": "Redis Sorted Set은 ZADD로 O(log N) 점수 업데이트, ZRANK로 순위 조회가 가능한 인메모리 자료구조입니다. 마이크로초 응답으로 실시간 리더보드에 최적입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-055",
+    "domain": "performance",
+    "question": "클릭스트림 데이터를 실시간으로 수집하고, S3에 장기 보관하면서 실시간 분석도 해야 합니다. 가장 적합한 아키텍처는?",
+    "choices": [
+      "SQS → Lambda → S3 저장",
+      "Kinesis Data Streams → Kinesis Data Firehose(S3) + Lambda(실시간 분석) 동시 소비",
+      "EC2에서 직접 수집 후 S3 업로드",
+      "SQS FIFO → Kinesis 전달"
+    ],
+    "answer": 1,
+    "explanation": "Kinesis Data Streams는 여러 소비자가 동시에 데이터를 구독할 수 있습니다. Firehose로 S3 저장과 Lambda로 실시간 분석을 동시에 처리합니다. SQS는 스트리밍보다 메시지 큐에 적합합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-056",
+    "domain": "performance",
+    "question": "온프레미스 Kubernetes 클러스터를 AWS로 이전합니다. 기존 Kubernetes 매니페스트(YAML)를 그대로 사용하고, 서버 관리는 최소화해야 합니다. 가장 적합한 서비스는?",
+    "choices": [
+      "EC2에 자체 Kubernetes 설치",
+      "Amazon ECS + EC2 Launch Type",
+      "Amazon EKS + Fargate",
+      "AWS Elastic Beanstalk"
+    ],
+    "answer": 2,
+    "explanation": "EKS는 관리형 Kubernetes로 기존 YAML 매니페스트를 그대로 적용할 수 있습니다. Fargate를 사용하면 워커 노드 관리도 불필요합니다. ECS는 Kubernetes API 호환이 안 되어 기존 매니페스트를 재사용할 수 없습니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-057",
+    "domain": "performance",
+    "question": "HPC(고성능 컴퓨팅) 워크로드에서 EC2 클러스터 내 수백 개 노드가 공유 파일 시스템에 초당 수백GB 처리량으로 접근해야 합니다. 가장 적합한 서비스는?",
+    "choices": [
+      "Amazon EFS",
+      "Amazon EBS Multi-Attach",
+      "Amazon FSx for Lustre",
+      "Amazon S3"
+    ],
+    "answer": 2,
+    "explanation": "FSx for Lustre는 HPC 전용 고성능 파일 시스템으로 수백GB/s 처리량과 낮은 레이턴시를 제공합니다. EFS는 NFS 기반으로 HPC급 처리량이 나오지 않고, EBS Multi-Attach는 최대 16개 인스턴스만 지원합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-058",
+    "domain": "performance",
+    "question": "Lambda 함수가 RDS MySQL에 연결할 때 동시 실행이 늘어날수록 DB 연결이 고갈됩니다. 가장 적합한 해결책은?",
+    "choices": [
+      "RDS 인스턴스 타입 업그레이드",
+      "Lambda 동시 실행 수 제한",
+      "RDS Proxy를 Lambda와 RDS 사이에 배치",
+      "DynamoDB로 마이그레이션"
+    ],
+    "answer": 2,
+    "explanation": "RDS Proxy는 연결 풀링을 제공하여 Lambda 수천 개가 풀의 소수 연결을 공유하게 합니다. DB 연결 고갈을 근본적으로 해결하며 Lambda와 RDS 사이에 투명하게 배치됩니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-059",
+    "domain": "cost",
+    "question": "미디어 파일이 업로드 후 처음 30일은 자주 조회되고, 30~90일은 가끔, 90일 이후에는 거의 안 쓰입니다. 비용 최적화를 위한 가장 적합한 S3 구성은?",
+    "choices": [
+      "모든 파일을 S3 Standard에 영구 보관",
+      "S3 Lifecycle: Standard → 30일 후 S3-IA → 90일 후 S3 Glacier Instant Retrieval",
+      "S3 Lifecycle: 즉시 Glacier Deep Archive로 이동",
+      "S3 Intelligent-Tiering 단독 사용"
+    ],
+    "answer": 1,
+    "explanation": "Lifecycle 정책으로 접근 패턴에 따라 스토리지 클래스를 단계적으로 전환합니다. Standard(30일) → S3-IA(30~90일, 저비용) → Glacier(90일 이후, 매우 저렴). 명확한 패턴이 있을 때 Lifecycle이 Intelligent-Tiering보다 저렴합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-060",
+    "domain": "cost",
+    "question": "개발팀이 비업무 시간(저녁·주말)에도 EC2 인스턴스를 켜두어 비용이 낭비됩니다. 업무 시간에만 자동으로 켜고 끄려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "개발자들이 매일 수동으로 인스턴스 시작/중단",
+      "AWS Lambda + EventBridge Scheduler로 업무 시간 시작/종료 자동화",
+      "인스턴스를 Reserved Instance로 전환",
+      "Auto Scaling으로 트래픽 기반 스케일링 적용"
+    ],
+    "answer": 1,
+    "explanation": "EventBridge Scheduler + Lambda는 크론 표현식으로 정확한 시간에 EC2를 자동 시작/중단합니다. Reserved Instance는 약정 시간 동안 항상 비용이 발생하므로 비업무 시간 절약이 불가합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-061",
+    "domain": "cost",
+    "question": "스타트업이 트래픽이 불규칙한 내부 앱에 Aurora를 쓰려 합니다. 사용하지 않을 때 비용을 최소화하고 싶습니다. 가장 적합한 Aurora 옵션은?",
+    "choices": [
+      "Aurora Multi-AZ",
+      "Aurora Read Replica",
+      "Aurora Serverless v2",
+      "Aurora Global Database"
+    ],
+    "answer": 2,
+    "explanation": "Aurora Serverless v2는 트래픽에 따라 자동으로 용량을 0~최대값으로 조절하며 미사용 시 일시 중지(pause)가 가능합니다. Multi-AZ·Read Replica는 항상 인스턴스가 실행되어 비용이 발생합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-062",
+    "domain": "cost",
+    "question": "해외 고객이 대용량 파일을 한국 S3 버킷에 업로드할 때 속도가 너무 느립니다. 가장 적합한 해결책은?",
+    "choices": [
+      "S3 Cross-Region Replication",
+      "CloudFront 배포",
+      "S3 Transfer Acceleration",
+      "Direct Connect 설치 후 전송"
+    ],
+    "answer": 2,
+    "explanation": "Transfer Acceleration은 전 세계 CloudFront 엣지 로케이션을 통해 업로드 후 AWS 백본으로 S3에 전달합니다. 해외 대용량 업로드 속도를 대폭 향상시킵니다. CloudFront는 다운로드 캐싱용으로 업로드 가속에는 부적합합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-063",
+    "domain": "cost",
+    "question": "프라이빗 서브넷의 EC2가 S3와 DynamoDB에 접근해야 합니다. 인터넷을 경유하지 않고 가장 저렴하게 구성하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "Gateway VPC Endpoint (S3, DynamoDB - 무료)",
+      "Interface VPC Endpoint (ENI 기반, 유료)",
+      "NAT Gateway 사용",
+      "EC2를 퍼블릭 서브넷으로 이동"
+    ],
+    "answer": 0,
+    "explanation": "Gateway Endpoint는 S3·DynamoDB 전용으로 완전 무료이며 라우팅 테이블 추가만으로 프라이빗 접근이 가능합니다. NAT Gateway는 시간당 비용 + GB당 비용이 발생하고 인터넷을 경유합니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-064",
+    "domain": "cost",
+    "question": "AWS 인프라 비용이 예상보다 크게 증가했습니다. 어떤 서비스가 비용을 많이 쓰는지 분석하고 향후 비용을 예측하려 합니다. 가장 적합한 도구는?",
+    "choices": [
+      "AWS Billing Dashboard",
+      "AWS Cost Explorer",
+      "AWS Budgets",
+      "AWS Trusted Advisor"
+    ],
+    "answer": 1,
+    "explanation": "Cost Explorer는 기간별·서비스별·리전별 비용을 시각화하고 사용량 트렌드 분석과 비용 예측(Forecasting) 기능을 제공합니다. Budgets는 예산 초과 알림, Trusted Advisor는 비용 절감 권장사항 체크리스트입니다.",
+    "type": "single"
+  },
+  {
+    "id": "saa-065",
+    "domain": "cost",
+    "question": "온프레미스에 80TB 데이터가 있고 인터넷 속도는 100Mbps입니다. 빠른 시간 내에 S3로 마이그레이션하려 합니다. 가장 적합한 방법은?",
+    "choices": [
+      "AWS DataSync",
+      "AWS Snowball Edge",
+      "S3 Transfer Acceleration",
+      "Direct Connect 설치 후 전송"
+    ],
+    "answer": 1,
+    "explanation": "100Mbps로 80TB를 전송하면 약 74일이 걸립니다. Snowball Edge는 물리 디바이스로 로컬 복사 후 AWS 반송하여 1-2주 내에 완료됩니다. 10TB 이상 + 느린 인터넷 환경에서는 Snowball이 정석입니다.",
+    "type": "single"
   }
 ]
