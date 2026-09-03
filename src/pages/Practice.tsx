@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import type { Domain } from '../types';
-import { pickQuestions } from '../lib/pickQuestions';
+import { pickQuestions, getRoundCount, type RoundFilter } from '../lib/pickQuestions';
 import QuestionCard from '../components/QuestionCard';
 import Explanation from '../components/Explanation';
 import allQuestions from '../data/questions.json';
@@ -16,10 +16,20 @@ const FILTERS: { value: DomainFilter; label: string }[] = [
   { value: 'cost', label: '비용' },
 ];
 
+const ROUND_COUNT = getRoundCount(allQuestions as any);
+const ROUND_FILTERS: { value: RoundFilter; label: string }[] = [
+  { value: 'all', label: '전체' },
+  ...Array.from({ length: ROUND_COUNT }, (_, i) => ({
+    value: (i + 1) as RoundFilter,
+    label: `${i + 1}회차`,
+  })),
+];
+
 export default function Practice() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<DomainFilter>('all');
-  const [qList, setQList] = useState(() => pickQuestions(allQuestions as any, 'all'));
+  const [round, setRound] = useState<RoundFilter>('all');
+  const [qList, setQList] = useState(() => pickQuestions(allQuestions as any, 'all', 'all'));
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | number[] | undefined>(undefined);
   const [submitted, setSubmitted] = useState(false);
@@ -28,12 +38,24 @@ export default function Practice() {
 
   const q = qList[idx];
 
-  function applyFilter(f: DomainFilter) {
-    setFilter(f);
-    setQList(pickQuestions(allQuestions as any, f));
+  /** 도메인·회차 중 하나가 바뀌면 문제 목록과 점수를 새로 시작한다 */
+  function rebuild(nextDomain: DomainFilter, nextRound: RoundFilter) {
+    setFilter(nextDomain);
+    setRound(nextRound);
+    setQList(pickQuestions(allQuestions as any, nextDomain, nextRound));
     setIdx(0);
     setSelected(undefined);
     setSubmitted(false);
+    setCorrect(0);
+    setTotal(0);
+  }
+
+  function applyFilter(f: DomainFilter) {
+    rebuild(f, round);
+  }
+
+  function applyRound(r: RoundFilter) {
+    rebuild(filter, r);
   }
 
   function handleSelect(i: number) {
@@ -64,16 +86,15 @@ export default function Practice() {
   }
 
   function next() {
-    if (idx < qList.length - 1) {
-      setIdx(i => i + 1);
-      setSelected(undefined);
-      setSubmitted(false);
-    }
+    // 마지막 문제에서는 첫 문제로 되돌아간다(버튼 라벨과 동작을 맞춤)
+    setIdx(i => (i < qList.length - 1 ? i + 1 : 0));
+    setSelected(undefined);
+    setSubmitted(false);
   }
 
   if (!q) return (
     <div className="min-h-screen flex items-center justify-center">
-      <p className="text-gray-500">해당 도메인 문제가 없습니다.</p>
+      <p className="text-gray-500">선택한 조건에 해당하는 문제가 없습니다.</p>
     </div>
   );
 
@@ -96,6 +117,21 @@ export default function Practice() {
               ${filter === f.value ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-gray-600'}`}
           >
             {f.label}
+          </button>
+        ))}
+      </div>
+
+      {/* 회차 선택 — 회차를 고르면 문제와 순서가 항상 동일하게 고정된다 */}
+      <div className="flex gap-2 px-4 py-2.5 overflow-x-auto bg-white border-b items-center">
+        <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap pr-1">회차</span>
+        {ROUND_FILTERS.map(r => (
+          <button
+            key={String(r.value)}
+            onClick={() => applyRound(r.value)}
+            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
+              ${round === r.value ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+          >
+            {r.label}
           </button>
         ))}
       </div>
