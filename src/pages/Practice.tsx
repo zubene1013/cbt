@@ -29,6 +29,8 @@ export default function Practice() {
   const navigate = useNavigate();
   const [filter, setFilter] = useState<DomainFilter>('all');
   const [round, setRound] = useState<RoundFilter>('all');
+  // 문제 풀 때는 필터를 숨겨 화면을 비운다 — 요약 바를 눌러 펼침
+  const [showFilters, setShowFilters] = useState(false);
   const [qList, setQList] = useState(() => pickQuestions(allQuestions as any, 'all', 'all'));
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | number[] | undefined>(undefined);
@@ -37,6 +39,12 @@ export default function Practice() {
   const [total, setTotal] = useState(0);
 
   const q = qList[idx];
+
+  // 접힌 상태에서도 현재 범위를 알 수 있게 요약 라벨을 만든다
+  const currentDomainLabel = FILTERS.find(f => f.value === filter)?.label ?? '전체';
+  const currentRoundLabel = round === 'all'
+    ? '전체 회차'
+    : `${round}회차`;
 
   /** 도메인·회차 중 하나가 바뀌면 문제 목록과 점수를 새로 시작한다 */
   function rebuild(nextDomain: DomainFilter, nextRound: RoundFilter) {
@@ -107,34 +115,57 @@ export default function Practice() {
         <span className="text-blue-200 text-sm">{correct}/{total}</span>
       </div>
 
-      {/* 도메인 필터 */}
-      <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b">
-        {FILTERS.map(f => (
-          <button
-            key={f.value}
-            onClick={() => applyFilter(f.value)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
-              ${filter === f.value ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-gray-600'}`}
-          >
-            {f.label}
-          </button>
-        ))}
-      </div>
+      {/* 필터 요약 바 — 누르면 아래 필터가 펼쳐진다 */}
+      <button
+        onClick={() => setShowFilters(v => !v)}
+        className="flex items-center justify-between px-4 py-2.5 bg-white border-b w-full"
+      >
+        <span className="flex items-center gap-1.5 text-xs">
+          <span className="px-2 py-0.5 rounded-full bg-[#1e3a5f] text-white font-semibold">
+            {currentDomainLabel}
+          </span>
+          <span className="px-2 py-0.5 rounded-full bg-amber-500 text-white font-semibold">
+            {currentRoundLabel}
+          </span>
+        </span>
+        <span className="text-[11px] text-gray-400 font-semibold">
+          {showFilters ? '접기 ▲' : '범위 변경 ▼'}
+        </span>
+      </button>
 
-      {/* 회차 선택 — 회차를 고르면 문제와 순서가 항상 동일하게 고정된다 */}
-      <div className="flex gap-2 px-4 py-2.5 overflow-x-auto bg-white border-b items-center">
-        <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap pr-1">회차</span>
-        {ROUND_FILTERS.map(r => (
-          <button
-            key={String(r.value)}
-            onClick={() => applyRound(r.value)}
-            className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
-              ${round === r.value ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600'}`}
-          >
-            {r.label}
-          </button>
-        ))}
-      </div>
+      {showFilters && (
+        <>
+          {/* 도메인 필터 */}
+          <div className="flex gap-2 px-4 py-3 overflow-x-auto bg-white border-b items-center">
+            <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap pr-1">종류</span>
+            {FILTERS.map(f => (
+              <button
+                key={f.value}
+                onClick={() => applyFilter(f.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
+                  ${filter === f.value ? 'bg-[#1e3a5f] text-white' : 'bg-gray-100 text-gray-600'}`}
+              >
+                {f.label}
+              </button>
+            ))}
+          </div>
+
+          {/* 회차 선택 — 회차를 고르면 문제와 순서가 항상 동일하게 고정된다 */}
+          <div className="flex gap-2 px-4 py-2.5 overflow-x-auto bg-white border-b items-center">
+            <span className="text-[11px] text-gray-400 font-semibold whitespace-nowrap pr-1">회차</span>
+            {ROUND_FILTERS.map(r => (
+              <button
+                key={String(r.value)}
+                onClick={() => applyRound(r.value)}
+                className={`px-3 py-1.5 rounded-full text-xs font-semibold whitespace-nowrap transition-colors
+                  ${round === r.value ? 'bg-amber-500 text-white' : 'bg-gray-100 text-gray-600'}`}
+              >
+                {r.label}
+              </button>
+            ))}
+          </div>
+        </>
+      )}
 
       {/* 문제 */}
       <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-2xl mx-auto w-full">
