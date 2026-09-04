@@ -73,6 +73,32 @@ export default function DrawingCanvas({
   useEffect(redraw, [size, questionId]);
   useEffect(() => subscribe(redraw));
 
+  /**
+   * 아이패드에서 펜으로 세로선을 그으면 Safari가 이를 스크롤 제스처로 가로채
+   * 획이 끊기고 화면이 밀린다. touch-action만으로는 손가락 스크롤까지 막히므로,
+   * 터치 이벤트를 직접 받아 "펜(stylus)일 때만" 기본 동작을 취소한다.
+   * 손가락 터치는 그대로 두어 스크롤이 정상 동작한다.
+   */
+  useEffect(() => {
+    const el = wrapRef.current;
+    if (!el) return;
+
+    // Safari는 Touch 객체에 touchType('stylus' | 'direct')을 제공한다
+    const hasStylus = (e: TouchEvent) =>
+      Array.from(e.touches).some(t => (t as Touch & { touchType?: string }).touchType === 'stylus');
+
+    const block = (e: TouchEvent) => {
+      if (drawingRef.current || hasStylus(e)) e.preventDefault();
+    };
+
+    el.addEventListener('touchstart', block, { passive: false });
+    el.addEventListener('touchmove', block, { passive: false });
+    return () => {
+      el.removeEventListener('touchstart', block);
+      el.removeEventListener('touchmove', block);
+    };
+  }, []);
+
   function toPoint(e: React.PointerEvent): Point {
     const rect = wrapRef.current!.getBoundingClientRect();
     return {
@@ -85,6 +111,8 @@ export default function DrawingCanvas({
     if (e.pointerType !== 'pen') return; // 손가락·마우스는 그대로 통과
     penGuardRef.current = true;
     e.preventDefault();
+    // 포인터를 이 요소에 고정 — 획을 긋다 영역을 살짝 벗어나도 끊기지 않는다
+    try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 미지원 시 무시 */ }
     drawingRef.current = [toPoint(e)];
   }
 
@@ -97,6 +125,7 @@ export default function DrawingCanvas({
 
   function onPointerUp(e: React.PointerEvent) {
     if (e.pointerType !== 'pen' || !drawingRef.current) return;
+    try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* 이미 해제됨 */ }
     addStroke(questionId, drawingRef.current);
     drawingRef.current = null;
     redraw();
