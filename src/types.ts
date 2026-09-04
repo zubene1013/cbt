@@ -19,6 +19,10 @@ export interface AnswerRecord {
 export interface ExamAttempt {
   attemptId: string;
   date: string;
+  /** 시험 모드인지 연습 모드인지 — 기록 화면에서 구분하는 데 쓴다 */
+  mode?: 'exam' | 'practice';
+  /** 연습 기록의 범위 표시용 (예: "3회차 · 보안") */
+  label?: string;
   score: number;
   passed: boolean;
   durationSec: number;

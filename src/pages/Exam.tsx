@@ -7,7 +7,9 @@ import { EXAM_MINUTES } from '../types';
 import Timer from '../components/Timer';
 import QuestionCard from '../components/QuestionCard';
 import QuestionNav from '../components/QuestionNav';
-import allQuestions from '../data/questions.json';
+import DrawingCanvas from '../components/DrawingCanvas';
+import NoteControls from '../components/NoteControls';
+import { QUESTIONS as allQuestions } from '../lib/questionBank';
 
 export default function Exam() {
   const navigate = useNavigate();
@@ -77,15 +79,19 @@ export default function Exam() {
       )}
 
       {/* 문제 */}
-      <div className="flex-1 px-4 py-5 max-w-2xl mx-auto w-full">
-        <QuestionCard
-          question={q}
-          index={idx}
-          total={questions.length}
-          selected={answers[q.id]}
-          onSelect={handleSelect}
-          showAnswer={false}
-        />
+      <div className="flex-1 px-4 py-5 max-w-2xl mx-auto w-full flex flex-col gap-3">
+        <DrawingCanvas questionId={q.id}>
+          <QuestionCard
+            question={q}
+            index={idx}
+            total={questions.length}
+            selected={answers[q.id]}
+            onSelect={handleSelect}
+            showAnswer={false}
+          />
+        </DrawingCanvas>
+
+        <NoteControls questionId={q.id} />
       </div>
 
       {/* 하단 네비 */}

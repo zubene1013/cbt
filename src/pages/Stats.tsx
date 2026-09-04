@@ -122,13 +122,21 @@ export default function Stats() {
 
         {/* 기록 목록 */}
         <div className="bg-white rounded-2xl p-4 shadow-sm">
-          <h2 className="font-bold text-gray-800 mb-3">시험 기록</h2>
+          <h2 className="font-bold text-gray-800 mb-3">응시 기록</h2>
           <div className="flex flex-col gap-2">
             {history.map(h => (
               <div key={h.attemptId} className="flex justify-between items-center py-2 border-b last:border-0">
                 <div>
+                  <span className={`text-[10px] px-1.5 py-0.5 rounded font-bold mr-2 ${
+                    h.mode === 'practice' ? 'bg-amber-100 text-amber-700' : 'bg-blue-100 text-blue-700'
+                  }`}>
+                    {h.mode === 'practice' ? '연습' : '시험'}
+                  </span>
                   <span className="text-sm text-gray-700">{h.date}</span>
-                  <span className="text-xs text-gray-400 ml-2">{h.correctCount}/{h.totalQuestions}</span>
+                  <span className="text-xs text-gray-400 ml-2">
+                    {h.correctCount}/{h.totalQuestions}
+                    {h.label ? ` · ${h.label}` : ''}
+                  </span>
                 </div>
                 <div className="flex items-center gap-2">
                   <span className="font-bold text-gray-800">{h.score}</span>

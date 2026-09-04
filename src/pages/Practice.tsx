@@ -1,10 +1,14 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import { useNavigate } from 'react-router-dom';
+import { calcScore } from '../lib/scoring';
+import { saveAttempt } from '../store/history';
 import type { Domain } from '../types';
 import { pickQuestions, getRoundCount, type RoundFilter } from '../lib/pickQuestions';
 import QuestionCard from '../components/QuestionCard';
 import Explanation from '../components/Explanation';
-import allQuestions from '../data/questions.json';
+import DrawingCanvas from '../components/DrawingCanvas';
+import NoteControls from '../components/NoteControls';
+import { QUESTIONS as allQuestions } from '../lib/questionBank';
 
 type DomainFilter = Domain | 'all';
 
@@ -37,6 +41,9 @@ export default function Practice() {
   const [submitted, setSubmitted] = useState(false);
   const [correct, setCorrect] = useState(0);
   const [total, setTotal] = useState(0);
+  // 회차를 끝냈을 때 결과 화면에 넘기기 위해 문제별 선택을 모아둔다
+  const [answers, setAnswers] = useState<Record<string, number | number[]>>({});
+  const startedAt = useRef(Date.now());
 
   const q = qList[idx];
 
@@ -56,6 +63,20 @@ export default function Practice() {
     setSubmitted(false);
     setCorrect(0);
     setTotal(0);
+    setAnswers({});
+    startedAt.current = Date.now();
+  }
+
+  /** 회차를 다 풀면 시험 모드와 같은 형식으로 채점해 결과 화면으로 보낸다 */
+  function finish() {
+    const durationSec = Math.round((Date.now() - startedAt.current) / 1000);
+    const attempt = {
+      ...calcScore(qList, answers, durationSec),
+      mode: 'practice' as const,
+      label: `${currentRoundLabel} · ${currentDomainLabel}`,
+    };
+    saveAttempt(attempt);
+    navigate('/result', { state: { attempt, questions: qList } });
   }
 
   function applyFilter(f: DomainFilter) {
@@ -76,6 +97,7 @@ export default function Practice() {
     } else {
       setSelected(i);
       setSubmitted(true);
+      setAnswers(a => ({ ...a, [q.id]: i }));
       const ans = Array.isArray(q.answer) ? q.answer : [q.answer];
       if (ans.includes(i)) setCorrect(c => c + 1);
       setTotal(t => t + 1);
@@ -88,6 +110,7 @@ export default function Practice() {
       setTotal(t => t + 1);
       const correctArr = Array.isArray(q.answer) ? q.answer : [q.answer];
       const selArr = Array.isArray(selected) ? selected : [];
+      setAnswers(a => ({ ...a, [q.id]: selArr }));
       const ok = correctArr.length === selArr.length && [...correctArr].sort().every((v, i) => v === [...selArr].sort()[i]);
       if (ok) setCorrect(c => c + 1);
     }
@@ -169,14 +192,18 @@ export default function Practice() {
 
       {/* 문제 */}
       <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-2xl mx-auto w-full">
-        <QuestionCard
-          question={q}
-          index={idx}
-          total={qList.length}
-          selected={selected}
-          onSelect={handleSelect}
-          showAnswer={submitted}
-        />
+        <DrawingCanvas questionId={q.id}>
+          <QuestionCard
+            question={q}
+            index={idx}
+            total={qList.length}
+            selected={selected}
+            onSelect={handleSelect}
+            showAnswer={submitted}
+          />
+        </DrawingCanvas>
+
+        <NoteControls questionId={q.id} />
 
         {q.type === 'multiple' && !submitted && (
           <button
@@ -191,12 +218,21 @@ export default function Practice() {
         {submitted && (
           <>
             <Explanation question={q} selected={selected} />
-            <button
-              onClick={next}
-              className="bg-[#1e3a5f] text-white py-3 rounded-xl font-bold"
-            >
-              {idx < qList.length - 1 ? '다음 문제 →' : '처음으로 돌아가기'}
-            </button>
+            {idx < qList.length - 1 ? (
+              <button
+                onClick={next}
+                className="bg-[#1e3a5f] text-white py-3 rounded-xl font-bold"
+              >
+                다음 문제 →
+              </button>
+            ) : (
+              <button
+                onClick={finish}
+                className="bg-amber-500 text-white py-3 rounded-xl font-bold"
+              >
+                결과 보기 ({correct}/{total} 정답)
+              </button>
+            )}
           </>
         )}
       </div>

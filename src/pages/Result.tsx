@@ -30,6 +30,11 @@ export default function Result() {
     <div className="min-h-screen bg-gray-50">
       {/* 헤더 */}
       <div className={`px-4 py-8 text-center ${attempt.passed ? 'bg-green-600' : 'bg-red-600'}`}>
+        {attempt.mode === 'practice' && (
+          <div className="inline-block mb-2 px-3 py-1 rounded-full bg-white/20 text-white text-xs font-bold">
+            연습 · {attempt.label}
+          </div>
+        )}
         <div className="text-5xl mb-2">{attempt.passed ? '🎉' : '📝'}</div>
         <div className="text-white text-4xl font-bold">{attempt.score}</div>
         <div className="text-white/80 text-sm">/ 1000점</div>
