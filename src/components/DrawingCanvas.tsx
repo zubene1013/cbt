@@ -2,37 +2,42 @@ import { useEffect, useRef, useState, type ReactNode } from 'react';
 import { addStroke, getStrokes, subscribe, type Point } from '../lib/notesStore';
 
 /**
- * 문제 위에 겹쳐지는 필기 레이어.
+ * 문제 영역 위에 겹쳐지는 필기 레이어.
  *
- * 애플펜슬(pointerType === 'pen')로 화면에 대면 버튼을 누를 필요 없이 바로 그려진다.
- * 손가락·마우스는 그리지 않고 그대로 통과시켜서 보기 선택과 스크롤이 평소처럼 동작한다.
- * 캔버스 자체는 pointer-events: none 이고, 감지는 감싸는 div에서 하기 때문에 가능한 구조다.
+ * - 애플펜슬(pointerType === 'pen')로 대면 버튼을 누를 필요 없이 바로 그려진다.
+ * - 손가락·마우스는 그리지 않고 통과시켜서 보기 선택과 스크롤이 평소처럼 동작한다.
+ * - 펜으로 그은 뒤 따라오는 click 이벤트는 캡처 단계에서 삼켜서,
+ *   보기 위에 필기해도 답이 선택되지 않게 한다.
+ *
+ * children을 감싸는 div 전체가 필기 영역이므로, 문제 카드뿐 아니라
+ * 그 주변 여백까지 넓게 필기할 수 있다.
  */
 export default function DrawingCanvas({
   questionId,
   children,
+  className = '',
 }: {
   questionId: string;
   children: ReactNode;
+  className?: string;
 }) {
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef<Point[] | null>(null);
+  /** 펜으로 그리는 중이었으면 뒤따르는 click을 막기 위한 표식 */
+  const penGuardRef = useRef(false);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
-  // 캔버스를 감싸는 영역 크기에 맞춘다(회전·리사이즈 대응)
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
-    const ro = new ResizeObserver(() => {
-      setSize({ w: el.clientWidth, h: el.clientHeight });
-    });
+    const measure = () => setSize({ w: el.clientWidth, h: el.clientHeight });
+    const ro = new ResizeObserver(measure);
     ro.observe(el);
-    setSize({ w: el.clientWidth, h: el.clientHeight });
+    measure();
     return () => ro.disconnect();
   }, []);
 
-  /** 저장된 획을 캔버스에 다시 그린다 */
   function redraw() {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -77,7 +82,8 @@ export default function DrawingCanvas({
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    if (e.pointerType !== 'pen') return; // 손가락·마우스는 통과시킨다
+    if (e.pointerType !== 'pen') return; // 손가락·마우스는 그대로 통과
+    penGuardRef.current = true;
     e.preventDefault();
     drawingRef.current = [toPoint(e)];
   }
@@ -94,16 +100,29 @@ export default function DrawingCanvas({
     addStroke(questionId, drawingRef.current);
     drawingRef.current = null;
     redraw();
+    // click이 오지 않는 경우를 대비한 안전장치
+    window.setTimeout(() => { penGuardRef.current = false; }, 400);
+  }
+
+  /** 펜으로 그린 직후 발생하는 click을 삼켜서 보기가 선택되지 않게 한다 */
+  function onClickCapture(e: React.MouseEvent) {
+    if (!penGuardRef.current) return;
+    penGuardRef.current = false;
+    e.preventDefault();
+    e.stopPropagation();
   }
 
   return (
     <div
       ref={wrapRef}
-      className="relative touch-pan-y"
+      className={`relative ${className}`}
+      style={{ touchAction: 'pan-y' }}
       onPointerDown={onPointerDown}
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
+      onPointerCancel={onPointerUp}
       onPointerLeave={onPointerUp}
+      onClickCapture={onClickCapture}
     >
       {children}
       <canvas

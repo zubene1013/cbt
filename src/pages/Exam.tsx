@@ -79,8 +79,10 @@ export default function Exam() {
       )}
 
       {/* 문제 */}
-      <div className="flex-1 px-4 py-5 max-w-2xl mx-auto w-full flex flex-col gap-3">
-        <DrawingCanvas questionId={q.id}>
+      <NoteControls questionId={q.id} />
+
+      <DrawingCanvas questionId={q.id} className="flex-1">
+        <div className="px-4 py-5 max-w-2xl mx-auto w-full min-h-full">
           <QuestionCard
             question={q}
             index={idx}
@@ -89,10 +91,8 @@ export default function Exam() {
             onSelect={handleSelect}
             showAnswer={false}
           />
-        </DrawingCanvas>
-
-        <NoteControls questionId={q.id} />
-      </div>
+        </div>
+      </DrawingCanvas>
 
       {/* 하단 네비 */}
       <div className="bg-white border-t px-4 py-3 flex gap-3 sticky bottom-0">

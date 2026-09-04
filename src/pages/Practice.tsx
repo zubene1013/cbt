@@ -190,9 +190,11 @@ export default function Practice() {
         </>
       )}
 
-      {/* 문제 */}
-      <div className="flex-1 px-4 py-5 flex flex-col gap-4 max-w-2xl mx-auto w-full">
-        <DrawingCanvas questionId={q.id}>
+      <NoteControls questionId={q.id} />
+
+      {/* 문제 — 카드 주변 여백까지 전부 필기 영역 */}
+      <DrawingCanvas questionId={q.id} className="flex-1">
+        <div className="px-4 py-5 flex flex-col gap-4 max-w-2xl mx-auto w-full min-h-full">
           <QuestionCard
             question={q}
             index={idx}
@@ -201,10 +203,12 @@ export default function Practice() {
             onSelect={handleSelect}
             showAnswer={submitted}
           />
-        </DrawingCanvas>
+          {submitted && <Explanation question={q} selected={selected} />}
+        </div>
+      </DrawingCanvas>
 
-        <NoteControls questionId={q.id} />
-
+      {/* 조작 버튼 — 필기 영역 밖이라 애플펜슬로도 정상 동작 */}
+      <div className="px-4 py-3 flex flex-col gap-2 max-w-2xl mx-auto w-full bg-gray-50 border-t">
         {q.type === 'multiple' && !submitted && (
           <button
             onClick={submitMultiple}
@@ -217,7 +221,6 @@ export default function Practice() {
 
         {submitted && (
           <>
-            <Explanation question={q} selected={selected} />
             {idx < qList.length - 1 ? (
               <button
                 onClick={next}
