@@ -5,12 +5,20 @@
   -webkit-tap-highlight-color: transparent;
 }
 
-body {
+html, body {
   margin: 0;
+  height: 100%;
+  /* 페이지 자체가 스크롤되거나 고무줄처럼 튕기지 않게 고정 — 펜 필기가 밀리는 것을 막는다 */
+  overflow: hidden;
+  overscroll-behavior: none;
+}
+
+body {
   font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
   -webkit-font-smoothing: antialiased;
 }
 
 #root {
-  min-height: 100svh;
+  height: 100%;
+  overflow: hidden;
 }

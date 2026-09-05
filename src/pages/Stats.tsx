@@ -10,7 +10,7 @@ export default function Stats() {
 
   if (history.length === 0) {
     return (
-      <div className="min-h-screen bg-gray-50 flex flex-col">
+      <div className="h-full overflow-y-auto bg-gray-50 flex flex-col">
         <div className="bg-[#1e3a5f] px-4 py-3 flex items-center">
           <button onClick={() => navigate('/')} className="text-white text-sm mr-4">← 홈</button>
           <span className="text-white font-bold">점수 통계</span>
@@ -38,7 +38,7 @@ export default function Stats() {
   ) as Record<Domain, number>;
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-full overflow-y-auto bg-gray-50 flex flex-col">
       <div className="bg-[#1e3a5f] px-4 py-3 flex items-center justify-between">
         <button onClick={() => navigate('/')} className="text-white text-sm">← 홈</button>
         <span className="text-white font-bold">점수 통계</span>

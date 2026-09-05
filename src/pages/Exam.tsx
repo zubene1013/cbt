@@ -49,7 +49,7 @@ export default function Exam() {
   }
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    <div className="h-[100dvh] overflow-hidden bg-gray-50 flex flex-col">
       {/* 헤더 */}
       <div className="bg-[#1e3a5f] px-4 py-3 flex items-center justify-between sticky top-0 z-10">
         <button
@@ -79,10 +79,16 @@ export default function Exam() {
       )}
 
       {/* 문제 */}
-      <NoteControls questionId={q.id} />
+      <NoteControls
+        questionId={q.id}
+        onPrev={() => setIdx(i => Math.max(0, i - 1))}
+        onNext={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
+        canPrev={idx > 0}
+        canNext={idx < questions.length - 1}
+      />
 
-      <DrawingCanvas questionId={q.id} className="flex-1">
-        <div className="px-4 py-5 max-w-2xl mx-auto w-full min-h-full">
+      <DrawingCanvas questionId={q.id} className="flex-1 min-h-0 overflow-hidden">
+        <div className="px-4 py-4 max-w-2xl mx-auto w-full h-full">
           <QuestionCard
             question={q}
             index={idx}
@@ -95,29 +101,13 @@ export default function Exam() {
       </DrawingCanvas>
 
       {/* 하단 네비 */}
-      <div className="bg-white border-t px-4 py-3 flex gap-3 sticky bottom-0">
+      <div className="bg-white border-t px-4 py-3">
         <button
-          onClick={() => setIdx(i => Math.max(0, i - 1))}
-          disabled={idx === 0}
-          className="flex-1 py-3 rounded-xl border-2 border-gray-200 text-gray-600 font-bold disabled:opacity-30"
+          onClick={() => { if (confirm('시험을 제출할까요?')) submit(); }}
+          className="w-full py-3 rounded-xl bg-[#f0a500] text-white font-bold"
         >
-          ← 이전
+          제출하기
         </button>
-        {idx < questions.length - 1 ? (
-          <button
-            onClick={() => setIdx(i => i + 1)}
-            className="flex-1 py-3 rounded-xl bg-[#1e3a5f] text-white font-bold"
-          >
-            다음 →
-          </button>
-        ) : (
-          <button
-            onClick={submit}
-            className="flex-1 py-3 rounded-xl bg-[#f0a500] text-white font-bold"
-          >
-            제출하기
-          </button>
-        )}
       </div>
     </div>
   );

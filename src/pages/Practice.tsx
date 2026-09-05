@@ -140,13 +140,14 @@ export default function Practice() {
   }
 
   if (!q) return (
-    <div className="min-h-screen flex items-center justify-center">
+    <div className="h-full flex items-center justify-center">
       <p className="text-gray-500">선택한 조건에 해당하는 문제가 없습니다.</p>
     </div>
   );
 
   return (
-    <div className="min-h-screen bg-gray-50 flex flex-col">
+    // 화면 전체를 뷰포트 높이에 고정 — 페이지가 스크롤되지 않아야 필기가 안정적이다
+    <div className="h-[100dvh] overflow-hidden bg-gray-50 flex flex-col">
       {/* 헤더 */}
       <div className="bg-[#1e3a5f] px-4 py-3 flex items-center justify-between">
         <button onClick={() => navigate('/')} className="text-white text-sm">← 홈</button>
@@ -210,6 +211,10 @@ export default function Practice() {
         questionId={q.id}
         navOpen={showNav}
         onToggleNav={() => setShowNav(v => !v)}
+        onPrev={() => goTo(idx - 1)}
+        onNext={() => goTo(idx + 1)}
+        canPrev={idx > 0}
+        canNext={idx < qList.length - 1}
       />
 
       {/* 문항 이동 그리드 — 푼 문제는 파란색, 안 푼 문제는 회색 */}
@@ -236,8 +241,8 @@ export default function Practice() {
       )}
 
       {/* 문제 — 카드 주변 여백까지 전부 필기 영역 */}
-      <DrawingCanvas questionId={q.id} className="flex-1">
-        <div className="px-4 py-5 flex flex-col gap-4 max-w-2xl mx-auto w-full min-h-full">
+      <DrawingCanvas questionId={q.id} className="flex-1 min-h-0 overflow-hidden">
+        <div className="px-4 py-4 flex flex-col gap-3 max-w-2xl mx-auto w-full h-full">
           <QuestionCard
             question={q}
             index={idx}
@@ -270,24 +275,6 @@ export default function Practice() {
             다음 문제 →
           </button>
         )}
-
-        {/* 문항 이동 — 아직 풀지 않은 문제도 자유롭게 오갈 수 있다 */}
-        <div className="flex gap-2">
-          <button
-            onClick={() => goTo(idx - 1)}
-            disabled={idx === 0}
-            className="flex-1 py-2.5 rounded-xl border-2 border-gray-300 text-gray-600 font-semibold text-sm disabled:opacity-30"
-          >
-            ← 이전
-          </button>
-          <button
-            onClick={() => goTo(idx + 1)}
-            disabled={idx === qList.length - 1}
-            className="flex-1 py-2.5 rounded-xl border-2 border-gray-300 text-gray-600 font-semibold text-sm disabled:opacity-30"
-          >
-            다음 →
-          </button>
-        </div>
 
         {/* 다 풀었으면 어느 문항에 있든 결과를 볼 수 있다 */}
         {answeredIdx.size === qList.length && (

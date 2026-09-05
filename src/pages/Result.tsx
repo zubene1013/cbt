@@ -27,7 +27,7 @@ export default function Result() {
   const s = attempt.durationSec % 60;
 
   return (
-    <div className="min-h-screen bg-gray-50">
+    <div className="h-full overflow-y-auto bg-gray-50">
       {/* 헤더 */}
       <div className={`px-4 py-8 text-center ${attempt.passed ? 'bg-green-600' : 'bg-red-600'}`}>
         {attempt.mode === 'practice' && (

@@ -6,7 +6,7 @@ export default function Home() {
   const history = getHistory().slice(0, 3);
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-[#1e3a5f] to-[#2d5a8e] flex flex-col items-center justify-start px-4 pt-16 pb-10">
+    <div className="h-full overflow-y-auto bg-gradient-to-b from-[#1e3a5f] to-[#2d5a8e] flex flex-col items-center justify-start px-4 pt-16 pb-10">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="text-5xl mb-3">☁️</div>
