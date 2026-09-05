@@ -12,6 +12,10 @@ import { addStroke, getStrokes, subscribe, type Point } from '../lib/notesStore'
  * children을 감싸는 div 전체가 필기 영역이므로, 문제 카드뿐 아니라
  * 그 주변 여백까지 넓게 필기할 수 있다.
  */
+/** 이 거리(px)·시간(ms) 안에서 펜을 떼면 필기가 아니라 "탭"으로 본다 */
+const TAP_MOVE_PX = 10;
+const TAP_MS = 400;
+
 export default function DrawingCanvas({
   questionId,
   children,
@@ -24,8 +28,10 @@ export default function DrawingCanvas({
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef<Point[] | null>(null);
-  /** 펜으로 그리는 중이었으면 뒤따르는 click을 막기 위한 표식 */
+  /** 펜으로 실제 획을 그었으면 뒤따르는 click을 막기 위한 표식 */
   const penGuardRef = useRef(false);
+  /** 펜을 댄 지점과 시각 — 탭인지 필기인지 판정하는 데 쓴다 */
+  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -109,7 +115,7 @@ export default function DrawingCanvas({
 
   function onPointerDown(e: React.PointerEvent) {
     if (e.pointerType !== 'pen') return; // 손가락·마우스는 그대로 통과
-    penGuardRef.current = true;
+    startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
     e.preventDefault();
     // 포인터를 이 요소에 고정 — 획을 긋다 영역을 살짝 벗어나도 끊기지 않는다
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 미지원 시 무시 */ }
@@ -126,8 +132,35 @@ export default function DrawingCanvas({
   function onPointerUp(e: React.PointerEvent) {
     if (e.pointerType !== 'pen' || !drawingRef.current) return;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* 이미 해제됨 */ }
-    addStroke(questionId, drawingRef.current);
+
+    const start = startRef.current;
+    const moved = start
+      ? Math.hypot(e.clientX - start.x, e.clientY - start.y)
+      : Infinity;
+    const elapsed = start ? Date.now() - start.t : Infinity;
+
+    // 거의 움직이지 않고 짧게 뗐으면 "탭" — 필기가 아니라 선택 의도로 본다
+    const isTap = moved < TAP_MOVE_PX && elapsed < TAP_MS;
+
+    const stroke = drawingRef.current;
     drawingRef.current = null;
+    startRef.current = null;
+
+    if (isTap) {
+      // 펜 입력은 기본 동작을 막아둬서 브라우저가 click을 만들지 않는다.
+      // 그래서 탭한 지점의 버튼을 직접 찾아 클릭을 발생시킨다.
+      penGuardRef.current = false;
+      redraw();
+      const el = document.elementFromPoint(e.clientX, e.clientY);
+      const btn = el?.closest('button, [role="button"]') as HTMLElement | null;
+      if (btn && wrapRef.current?.contains(btn) && !btn.hasAttribute('disabled')) {
+        btn.click();
+      }
+      return;
+    }
+
+    addStroke(questionId, stroke ?? []);
+    penGuardRef.current = true;
     redraw();
     // click이 오지 않는 경우를 대비한 안전장치
     window.setTimeout(() => { penGuardRef.current = false; }, 400);
