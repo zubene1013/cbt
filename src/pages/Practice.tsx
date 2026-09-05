@@ -8,6 +8,7 @@ import QuestionCard from '../components/QuestionCard';
 import Explanation from '../components/Explanation';
 import DrawingCanvas from '../components/DrawingCanvas';
 import NoteControls from '../components/NoteControls';
+import QuestionNav from '../components/QuestionNav';
 import { QUESTIONS as allQuestions } from '../lib/questionBank';
 
 type DomainFilter = Domain | 'all';
@@ -35,6 +36,8 @@ export default function Practice() {
   const [round, setRound] = useState<RoundFilter>('all');
   // 문제 풀 때는 필터를 숨겨 화면을 비운다 — 요약 바를 눌러 펼침
   const [showFilters, setShowFilters] = useState(false);
+  // 문항 이동 그리드 표시 여부
+  const [showNav, setShowNav] = useState(false);
   const [qList, setQList] = useState(() => pickQuestions(allQuestions as any, 'all', 'all'));
   const [idx, setIdx] = useState(0);
   const [selected, setSelected] = useState<number | number[] | undefined>(undefined);
@@ -46,6 +49,11 @@ export default function Practice() {
   const startedAt = useRef(Date.now());
 
   const q = qList[idx];
+
+  // 이미 답을 제출한 문항 번호 — 문항 이동 그리드에서 푼 문제 표시에 쓴다
+  const answeredIdx = new Set(
+    qList.map((qq, i) => (answers[qq.id] !== undefined ? i : -1)).filter(i => i >= 0)
+  );
 
   // 접힌 상태에서도 현재 범위를 알 수 있게 요약 라벨을 만든다
   const currentDomainLabel = FILTERS.find(f => f.value === filter)?.label ?? '전체';
@@ -116,11 +124,19 @@ export default function Practice() {
     }
   }
 
+  /** 특정 문항으로 이동 — 이미 푼 문제면 선택·해설 상태를 복원한다 */
+  function goTo(i: number) {
+    if (i < 0 || i >= qList.length) return;
+    const target = qList[i];
+    const prev = answers[target.id];
+    setIdx(i);
+    setSelected(prev);
+    setSubmitted(prev !== undefined);
+  }
+
   function next() {
     // 마지막 문제에서는 첫 문제로 되돌아간다(버튼 라벨과 동작을 맞춤)
-    setIdx(i => (i < qList.length - 1 ? i + 1 : 0));
-    setSelected(undefined);
-    setSubmitted(false);
+    goTo(idx < qList.length - 1 ? idx + 1 : 0);
   }
 
   if (!q) return (
@@ -190,7 +206,34 @@ export default function Practice() {
         </>
       )}
 
-      <NoteControls questionId={q.id} />
+      <NoteControls
+        questionId={q.id}
+        navOpen={showNav}
+        onToggleNav={() => setShowNav(v => !v)}
+      />
+
+      {/* 문항 이동 그리드 — 푼 문제는 파란색, 안 푼 문제는 회색 */}
+      {showNav && (
+        <div className="px-4 py-3 bg-white border-b">
+          <div className="flex justify-between text-[11px] text-gray-500 mb-2">
+            <span>푼 문제 {answeredIdx.size} / {qList.length}</span>
+            <span className="flex items-center gap-2">
+              <span className="inline-flex items-center gap-1">
+                <i className="w-2.5 h-2.5 rounded-sm bg-blue-200 inline-block" />푼 문제
+              </span>
+              <span className="inline-flex items-center gap-1">
+                <i className="w-2.5 h-2.5 rounded-sm bg-gray-100 inline-block" />안 푼 문제
+              </span>
+            </span>
+          </div>
+          <QuestionNav
+            total={qList.length}
+            current={idx}
+            answered={answeredIdx}
+            onJump={i => { goTo(i); setShowNav(false); }}
+          />
+        </div>
+      )}
 
       {/* 문제 — 카드 주변 여백까지 전부 필기 영역 */}
       <DrawingCanvas questionId={q.id} className="flex-1">
@@ -219,24 +262,41 @@ export default function Practice() {
           </button>
         )}
 
-        {submitted && (
-          <>
-            {idx < qList.length - 1 ? (
-              <button
-                onClick={next}
-                className="bg-[#1e3a5f] text-white py-3 rounded-xl font-bold"
-              >
-                다음 문제 →
-              </button>
-            ) : (
-              <button
-                onClick={finish}
-                className="bg-amber-500 text-white py-3 rounded-xl font-bold"
-              >
-                결과 보기 ({correct}/{total} 정답)
-              </button>
-            )}
-          </>
+        {submitted && idx < qList.length - 1 && (
+          <button
+            onClick={next}
+            className="bg-[#1e3a5f] text-white py-3 rounded-xl font-bold"
+          >
+            다음 문제 →
+          </button>
+        )}
+
+        {/* 문항 이동 — 아직 풀지 않은 문제도 자유롭게 오갈 수 있다 */}
+        <div className="flex gap-2">
+          <button
+            onClick={() => goTo(idx - 1)}
+            disabled={idx === 0}
+            className="flex-1 py-2.5 rounded-xl border-2 border-gray-300 text-gray-600 font-semibold text-sm disabled:opacity-30"
+          >
+            ← 이전
+          </button>
+          <button
+            onClick={() => goTo(idx + 1)}
+            disabled={idx === qList.length - 1}
+            className="flex-1 py-2.5 rounded-xl border-2 border-gray-300 text-gray-600 font-semibold text-sm disabled:opacity-30"
+          >
+            다음 →
+          </button>
+        </div>
+
+        {/* 다 풀었으면 어느 문항에 있든 결과를 볼 수 있다 */}
+        {answeredIdx.size === qList.length && (
+          <button
+            onClick={finish}
+            className="bg-amber-500 text-white py-3 rounded-xl font-bold"
+          >
+            결과 보기 ({correct}/{total} 정답)
+          </button>
         )}
       </div>
     </div>

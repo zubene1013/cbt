@@ -4,18 +4,12 @@ import { addStroke, getStrokes, subscribe, type Point } from '../lib/notesStore'
 /**
  * 문제 영역 위에 겹쳐지는 필기 레이어.
  *
- * - 애플펜슬(pointerType === 'pen')로 대면 버튼을 누를 필요 없이 바로 그려진다.
- * - 손가락·마우스는 그리지 않고 통과시켜서 보기 선택과 스크롤이 평소처럼 동작한다.
- * - 펜으로 그은 뒤 따라오는 click 이벤트는 캡처 단계에서 삼켜서,
- *   보기 위에 필기해도 답이 선택되지 않게 한다.
+ * `data-nodraw` 속성이 붙은 요소(문제 본문, 보기 카드) 위에서는 필기가 동작하지 않고
+ * 입력이 그대로 통과한다. 덕분에 애플펜슬로 보기를 눌러 답을 고를 수 있다.
+ * 그 밖의 영역(ABCD 배지 여백, 카드 주변 빈 공간)에서는 펜을 대면 바로 그려진다.
  *
- * children을 감싸는 div 전체가 필기 영역이므로, 문제 카드뿐 아니라
- * 그 주변 여백까지 넓게 필기할 수 있다.
+ * 손가락·마우스는 어디서든 그리지 않고 통과시켜 스크롤과 선택이 평소처럼 동작한다.
  */
-/** 이 거리(px)·시간(ms) 안에서 펜을 떼면 필기가 아니라 "탭"으로 본다 */
-const TAP_MOVE_PX = 10;
-const TAP_MS = 400;
-
 export default function DrawingCanvas({
   questionId,
   children,
@@ -28,10 +22,8 @@ export default function DrawingCanvas({
   const wrapRef = useRef<HTMLDivElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const drawingRef = useRef<Point[] | null>(null);
-  /** 펜으로 실제 획을 그었으면 뒤따르는 click을 막기 위한 표식 */
+  /** 펜으로 획을 그은 직후의 click을 삼키기 위한 표식 */
   const penGuardRef = useRef(false);
-  /** 펜을 댄 지점과 시각 — 탭인지 필기인지 판정하는 데 쓴다 */
-  const startRef = useRef<{ x: number; y: number; t: number } | null>(null);
   const [size, setSize] = useState({ w: 0, h: 0 });
 
   useEffect(() => {
@@ -79,21 +71,25 @@ export default function DrawingCanvas({
   useEffect(redraw, [size, questionId]);
   useEffect(() => subscribe(redraw));
 
+  /** 이 지점이 필기 금지 영역(문제·보기)인지 */
+  function isNoDraw(target: EventTarget | null): boolean {
+    return !!(target as Element | null)?.closest?.('[data-nodraw]');
+  }
+
   /**
-   * 아이패드에서 펜으로 세로선을 그으면 Safari가 이를 스크롤 제스처로 가로채
-   * 획이 끊기고 화면이 밀린다. touch-action만으로는 손가락 스크롤까지 막히므로,
-   * 터치 이벤트를 직접 받아 "펜(stylus)일 때만" 기본 동작을 취소한다.
-   * 손가락 터치는 그대로 두어 스크롤이 정상 동작한다.
+   * 아이패드에서 펜으로 세로선을 그으면 Safari가 스크롤 제스처로 가로채 획이 끊긴다.
+   * 펜(stylus)일 때만 기본 동작을 취소해 이를 막는다. 단 필기 금지 영역에서는
+   * 취소하지 않아야 탭이 정상적으로 클릭으로 이어진다.
    */
   useEffect(() => {
     const el = wrapRef.current;
     if (!el) return;
 
-    // Safari는 Touch 객체에 touchType('stylus' | 'direct')을 제공한다
     const hasStylus = (e: TouchEvent) =>
       Array.from(e.touches).some(t => (t as Touch & { touchType?: string }).touchType === 'stylus');
 
     const block = (e: TouchEvent) => {
+      if (isNoDraw(e.target)) return;
       if (drawingRef.current || hasStylus(e)) e.preventDefault();
     };
 
@@ -114,10 +110,9 @@ export default function DrawingCanvas({
   }
 
   function onPointerDown(e: React.PointerEvent) {
-    if (e.pointerType !== 'pen') return; // 손가락·마우스는 그대로 통과
-    startRef.current = { x: e.clientX, y: e.clientY, t: Date.now() };
+    if (e.pointerType !== 'pen') return;   // 손가락·마우스는 통과
+    if (isNoDraw(e.target)) return;        // 문제·보기 위에서는 선택이 되도록 통과
     e.preventDefault();
-    // 포인터를 이 요소에 고정 — 획을 긋다 영역을 살짝 벗어나도 끊기지 않는다
     try { e.currentTarget.setPointerCapture(e.pointerId); } catch { /* 미지원 시 무시 */ }
     drawingRef.current = [toPoint(e)];
   }
@@ -132,41 +127,14 @@ export default function DrawingCanvas({
   function onPointerUp(e: React.PointerEvent) {
     if (e.pointerType !== 'pen' || !drawingRef.current) return;
     try { e.currentTarget.releasePointerCapture(e.pointerId); } catch { /* 이미 해제됨 */ }
-
-    const start = startRef.current;
-    const moved = start
-      ? Math.hypot(e.clientX - start.x, e.clientY - start.y)
-      : Infinity;
-    const elapsed = start ? Date.now() - start.t : Infinity;
-
-    // 거의 움직이지 않고 짧게 뗐으면 "탭" — 필기가 아니라 선택 의도로 본다
-    const isTap = moved < TAP_MOVE_PX && elapsed < TAP_MS;
-
-    const stroke = drawingRef.current;
+    addStroke(questionId, drawingRef.current);
     drawingRef.current = null;
-    startRef.current = null;
-
-    if (isTap) {
-      // 펜 입력은 기본 동작을 막아둬서 브라우저가 click을 만들지 않는다.
-      // 그래서 탭한 지점의 버튼을 직접 찾아 클릭을 발생시킨다.
-      penGuardRef.current = false;
-      redraw();
-      const el = document.elementFromPoint(e.clientX, e.clientY);
-      const btn = el?.closest('button, [role="button"]') as HTMLElement | null;
-      if (btn && wrapRef.current?.contains(btn) && !btn.hasAttribute('disabled')) {
-        btn.click();
-      }
-      return;
-    }
-
-    addStroke(questionId, stroke ?? []);
     penGuardRef.current = true;
     redraw();
-    // click이 오지 않는 경우를 대비한 안전장치
     window.setTimeout(() => { penGuardRef.current = false; }, 400);
   }
 
-  /** 펜으로 그린 직후 발생하는 click을 삼켜서 보기가 선택되지 않게 한다 */
+  /** 펜으로 그린 직후 따라오는 click을 삼킨다 */
   function onClickCapture(e: React.MouseEvent) {
     if (!penGuardRef.current) return;
     penGuardRef.current = false;
@@ -183,7 +151,6 @@ export default function DrawingCanvas({
       onPointerMove={onPointerMove}
       onPointerUp={onPointerUp}
       onPointerCancel={onPointerUp}
-      onPointerLeave={onPointerUp}
       onClickCapture={onClickCapture}
     >
       {children}
