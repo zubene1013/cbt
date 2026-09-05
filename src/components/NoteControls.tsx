@@ -1,5 +1,6 @@
 import { useEffect, useState } from 'react';
 import { clearAll, clearQuestion, countPages, hasStrokes, subscribe } from '../lib/notesStore';
+import QuestionNav from './QuestionNav';
 
 /**
  * 오른쪽 상단 도구 줄.
@@ -13,6 +14,10 @@ export default function NoteControls({
   onNext,
   canPrev = false,
   canNext = false,
+  navTotal = 0,
+  navCurrent = 0,
+  navAnswered,
+  onJump,
 }: {
   questionId: string;
   onToggleNav?: () => void;
@@ -21,6 +26,11 @@ export default function NoteControls({
   onNext?: () => void;
   canPrev?: boolean;
   canNext?: boolean;
+  /** 문항 이동 드롭다운에 필요한 정보 */
+  navTotal?: number;
+  navCurrent?: number;
+  navAnswered?: Set<number>;
+  onJump?: (i: number) => void;
 }) {
   const [, force] = useState(0);
 
@@ -30,21 +40,21 @@ export default function NoteControls({
   const pages = countPages();
 
   const arrowClass =
-    'h-11 w-20 flex items-center justify-center rounded-xl border-2 border-gray-300 text-gray-600 disabled:opacity-25 active:bg-gray-100';
+    'h-9 w-14 flex items-center justify-center rounded-lg border border-gray-300 text-gray-600 disabled:opacity-25 active:bg-gray-100';
 
   return (
-    <div className="flex items-center gap-2 px-4 py-1.5 bg-white border-b">
+    <div className="relative flex items-center gap-2 px-4 py-1.5 bg-white border-b">
       {/* 왼쪽: 문항 이동 화살표 — 자주 쓰므로 크게 */}
       {onPrev && (
         <button onClick={onPrev} disabled={!canPrev} aria-label="이전 문제" className={arrowClass}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="m15 18-6-6 6-6" />
           </svg>
         </button>
       )}
       {onNext && (
         <button onClick={onNext} disabled={!canNext} aria-label="다음 문제" className={arrowClass}>
-          <svg width="26" height="26" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+          <svg width="19" height="19" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
             <path d="m9 18 6-6-6-6" />
           </svg>
         </button>
@@ -97,6 +107,34 @@ export default function NoteControls({
           <path d="M3 6h18M8 6V4a1 1 0 0 1 1-1h6a1 1 0 0 1 1 1v2M19 6l-1 14a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1L5 6" />
         </svg>
       </button>
+
+      {/* 문항 이동 드롭다운 — 도구줄 아래에 떠서 본문을 밀지 않는다 */}
+      {navOpen && onJump && navAnswered && (
+        <div
+          className="absolute top-full z-20 bg-white border border-gray-200 rounded-xl shadow-xl p-3 max-h-[55vh] overflow-y-auto"
+          style={{ right: '10%', width: '30%', minWidth: 260 }}
+        >
+          <div className="flex items-center justify-between text-[11px] text-gray-500 mb-2">
+            <span className="font-semibold text-gray-700">
+              푼 문제 {navAnswered.size} / {navTotal}
+            </span>
+            <span className="flex items-center gap-2">
+              <span className="flex items-center gap-1">
+                <i className="w-2.5 h-2.5 rounded-sm bg-blue-200 inline-block" />푼 문제
+              </span>
+              <span className="flex items-center gap-1">
+                <i className="w-2.5 h-2.5 rounded-sm bg-gray-100 inline-block" />안 푼 문제
+              </span>
+            </span>
+          </div>
+          <QuestionNav
+            total={navTotal}
+            current={navCurrent}
+            answered={navAnswered}
+            onJump={onJump}
+          />
+        </div>
+      )}
     </div>
   );
 }

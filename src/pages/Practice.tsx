@@ -8,7 +8,6 @@ import QuestionCard from '../components/QuestionCard';
 import Explanation from '../components/Explanation';
 import DrawingCanvas from '../components/DrawingCanvas';
 import NoteControls from '../components/NoteControls';
-import QuestionNav from '../components/QuestionNav';
 import { QUESTIONS as allQuestions } from '../lib/questionBank';
 
 type DomainFilter = Domain | 'all';
@@ -215,30 +214,11 @@ export default function Practice() {
         onNext={() => goTo(idx + 1)}
         canPrev={idx > 0}
         canNext={idx < qList.length - 1}
+        navTotal={qList.length}
+        navCurrent={idx}
+        navAnswered={answeredIdx}
+        onJump={i => { goTo(i); setShowNav(false); }}
       />
-
-      {/* 문항 이동 그리드 — 푼 문제는 파란색, 안 푼 문제는 회색 */}
-      {showNav && (
-        <div className="px-4 py-3 bg-white border-b">
-          <div className="flex justify-between text-[11px] text-gray-500 mb-2">
-            <span>푼 문제 {answeredIdx.size} / {qList.length}</span>
-            <span className="flex items-center gap-2">
-              <span className="inline-flex items-center gap-1">
-                <i className="w-2.5 h-2.5 rounded-sm bg-blue-200 inline-block" />푼 문제
-              </span>
-              <span className="inline-flex items-center gap-1">
-                <i className="w-2.5 h-2.5 rounded-sm bg-gray-100 inline-block" />안 푼 문제
-              </span>
-            </span>
-          </div>
-          <QuestionNav
-            total={qList.length}
-            current={idx}
-            answered={answeredIdx}
-            onJump={i => { goTo(i); setShowNav(false); }}
-          />
-        </div>
-      )}
 
       {/* 문제 — 카드 주변 여백까지 전부 필기 영역 */}
       <DrawingCanvas questionId={q.id} className="flex-1 min-h-0 overflow-hidden">

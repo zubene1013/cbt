@@ -6,7 +6,6 @@ import { saveAttempt } from '../store/history';
 import { EXAM_MINUTES } from '../types';
 import Timer from '../components/Timer';
 import QuestionCard from '../components/QuestionCard';
-import QuestionNav from '../components/QuestionNav';
 import DrawingCanvas from '../components/DrawingCanvas';
 import NoteControls from '../components/NoteControls';
 import { QUESTIONS as allQuestions } from '../lib/questionBank';
@@ -62,21 +61,7 @@ export default function Exam() {
         <span className="text-blue-200 text-sm">
           {answered.size}/{questions.length} 답변
         </span>
-        <button onClick={() => setShowNav(v => !v)} className="text-white text-sm">
-          {showNav ? '닫기' : '목록'}
-        </button>
       </div>
-
-      {showNav && (
-        <div className="bg-white border-b px-4 py-3">
-          <QuestionNav
-            total={questions.length}
-            current={idx}
-            answered={answered}
-            onJump={i => { setIdx(i); setShowNav(false); }}
-          />
-        </div>
-      )}
 
       {/* 문제 */}
       <NoteControls
@@ -85,6 +70,12 @@ export default function Exam() {
         onNext={() => setIdx(i => Math.min(questions.length - 1, i + 1))}
         canPrev={idx > 0}
         canNext={idx < questions.length - 1}
+        navOpen={showNav}
+        onToggleNav={() => setShowNav(v => !v)}
+        navTotal={questions.length}
+        navCurrent={idx}
+        navAnswered={answered}
+        onJump={i => { setIdx(i); setShowNav(false); }}
       />
 
       <DrawingCanvas questionId={q.id} className="flex-1 min-h-0 overflow-hidden">
